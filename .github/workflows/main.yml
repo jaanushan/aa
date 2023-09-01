@@ -1,32 +1,64 @@
-name: Python CI
+name: Upload Website
 
 on:
   push:
     branches:
-      - main
+    - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: jakejarvis/s3-sync-action@master
+      with:
+        args: --acl public-read --follow-symlinks --delete --exclude '.git*/*'
+      env:
+        AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::YourBucket/*"
+        }
+    ]
+}
+
+
+
+
+name: Python Testing
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout Repository
       uses: actions/checkout@v2
 
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.x
+        python-version: 3.8  # You can change this to your desired Python version
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+    - name: Install Dependencies
+      run: pip install -r requirements.txt  # Modify if you have a requirements file
 
-    - name: Run tests
-      run: pytest
+    - name: Run Tests
+      run: python -m unittest discover -v
 
-    - name: Upload test results
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results
-        path: test-reports
